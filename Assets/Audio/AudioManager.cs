@@ -11,8 +11,8 @@ namespace Audio
     {
         Master,
         Music,
-        SFX, // world sounds - stationary one-shots and moving/attached emitters
-        UI   // non-spatial UI / global sounds
+        Sfx, // world sounds - stationary one-shots and moving/attached emitters
+        Ui   // non-spatial UI / global sounds
     }
 
     /// <summary>
@@ -68,13 +68,18 @@ namespace Audio
 
             BuildPool();
             SetupMusicSources();
+        }
+
+        private void Start()
+        {
             LoadVolumes();
         }
 
         // ---------------- Volume ----------------
 
-        public float GetVolume(AudioCategory category) => _volumes.TryGetValue(category, out float v) ? v : 1f;
+        public float GetVolume(AudioCategory category) => _volumes.GetValueOrDefault(category, 1f);
 
+        /// <param name="category">Category of sound to set the volume of.</param>
         /// <param name="linear01">0-1 linear volume, as you'd get straight from a UI slider.</param>
         public void SetVolume(AudioCategory category, float linear01)
         {
@@ -166,7 +171,7 @@ namespace Audio
             var emitter = GetFromPool();
             emitter.transform.SetParent(transform);
             emitter.transform.localPosition = Vector3.zero;
-            emitter.PlayOneShot(clip, volumeScale, 1f, spatial: false, group: uiGroup);
+            emitter.PlayOneShot(clip, volumeScale, spatial: false, group: uiGroup);
         }
 
         // ---------------- Music: queue + crossfade + keyframed events ----------------
@@ -241,7 +246,7 @@ namespace Audio
             float t = 0f;
             while (t < fadeTime)
             {
-                t += Time.unscaledDeltaTime; // matches MenuBase's fades: keeps working while paused
+                t += Time.unscaledDeltaTime;
                 float p = t / fadeTime;
                 incoming.volume = Mathf.Lerp(0f, track.baseVolume, p);
                 outgoing.volume = Mathf.Lerp(startOutgoingVolume, 0f, p);
