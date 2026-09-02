@@ -149,11 +149,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Core.Bootstrap.Bootstrapper
   firstSceneAfterBoot: Menu
-  gameManagerPrefab: {fileID: 5530629367083062846, guid: c09df08152d969e47aa09d20a51155d8, type: 3}
-  audioManagerPrefab: {fileID: 2041663720606798776, guid: c7d0211a7275d444b9e8659ac1067697, type: 3}
-  inputManagerPrefab: {fileID: 103362782205750562, guid: 99a36c9c77bd12f42b2f9e3cb5064dfc, type: 3}
-  menuManagerPrefab: {fileID: 6457694687293210120, guid: 5a7949823517f6d41b494c3b1ad3ac79, type: 3}
-  saveManagerPrefab: {fileID: 2206212135983066945, guid: 8e4c5e2ea94d248458efd782f096195b, type: 3}
+  managerPrefabs:
+  - {fileID: 5530629367083062846, guid: c09df08152d969e47aa09d20a51155d8, type: 3}
+  - {fileID: 6457694687293210120, guid: 5a7949823517f6d41b494c3b1ad3ac79, type: 3}
+  - {fileID: 2206212135983066945, guid: 8e4c5e2ea94d248458efd782f096195b, type: 3}
+  - {fileID: 2041663720606798776, guid: c7d0211a7275d444b9e8659ac1067697, type: 3}
+  - {fileID: 103362782205750562, guid: 99a36c9c77bd12f42b2f9e3cb5064dfc, type: 3}
 --- !u!4 &321560450
 Transform:
   m_ObjectHideFlags: 0

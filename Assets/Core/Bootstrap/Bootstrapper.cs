@@ -8,20 +8,15 @@ namespace Core.Bootstrap
         [SerializeField] private string firstSceneAfterBoot;
  
         // References to manager prefabs that will persist
-        [SerializeField] private GameObject gameManagerPrefab;
-        [SerializeField] private GameObject audioManagerPrefab;
-        [SerializeField] private GameObject inputManagerPrefab;
-        [SerializeField] private GameObject menuManagerPrefab;
-        [SerializeField] private GameObject saveManagerPrefab;
+        [SerializeField] private GameObject[] managerPrefabs;
  
         private void Awake()
         {
             // Instantiate and persist each manager
-            InstantiateAndPersist(gameManagerPrefab);
-            InstantiateAndPersist(audioManagerPrefab);
-            InstantiateAndPersist(inputManagerPrefab);
-            InstantiateAndPersist(menuManagerPrefab);
-            InstantiateAndPersist(saveManagerPrefab);
+            foreach (var prefab in managerPrefabs)
+            {
+                InstantiateAndPersist(prefab);
+            }
         
             // Load the first real scene
             if (firstSceneAfterBoot == null) return;

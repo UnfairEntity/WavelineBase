@@ -9,6 +9,7 @@ namespace Core
     /// setup code will run once more on the doomed duplicate before Unity actually
     /// destroys it at the end of the frame.
     /// </summary>
+    
     public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static T _instance;
