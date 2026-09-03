@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Core;
 using Game;
-using UI;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,46 +9,50 @@ namespace Menu
 {
     public class MenuManager : Singleton<MenuManager>
     {
-        // Populate in Inspector with each menu's component
-        [Obsolete] [SerializeField] private MainMenu mainMenu;
-        [Obsolete] [SerializeField] private PauseMenu pauseMenu;
-        [Obsolete] [SerializeField] private SettingsMenu settingsMenu;
-        [Obsolete] [SerializeField] private CreditsMenu creditsMenu;
- 
-        [Obsolete] private readonly Stack<MenuBase> _historyOld = new();
-        [Obsolete] private MenuBase _currentMenu;
-        
+        // General References
         private UIDocument _document;
         private readonly Stack<VisualElement> _history = new();
+        private VisualElement _currentPanel;
         
         // Main Menu
         private Button _playButton;
         private Button _settingsButton;
         private Button _quitButton;
+        
+        // Settings Menu
+        private Button _audioButton;
+        private Button _graphicsButton;
 
         protected override void Awake()
         {
             base.Awake();
             
             _document = GetComponent<UIDocument>();
+            
             _playButton = _document.rootVisualElement.Q<Button>("PlayButton");
             _settingsButton = _document.rootVisualElement.Q<Button>("SettingsButton");
             _quitButton = _document.rootVisualElement.Q<Button>("QuitButton");
+            
+            _audioButton = _document.rootVisualElement.Q<Button>("AudioButton");
+            _graphicsButton = _document.rootVisualElement.Q<Button>("GraphicsButton");
 
             _playButton.clicked += OnPlayButtonClicked;
             _settingsButton.clicked += OnSettingsButtonClicked;
             _quitButton.clicked += OnQuitButtonClicked;
             
+            _audioButton.clicked += OnAudioButtonClicked;
+            _graphicsButton.clicked += OnGraphicsButtonClicked;
+            
             var backButtons = _document.rootVisualElement.Query<Button>("BackButton").ToList();
 
             foreach (var button in backButtons)
             {
-                button.clicked += OnBackButtonClicked;
+                button.clicked += ClosePanel;
             }
             
             // Hide panels so you don't have to when editing
             var panels = _document.rootVisualElement.Query<VisualElement>()
-                .Where(e => e.name.Contains("Panel")).ToList();
+                .Where(e => e.name.Contains("Panel", StringComparison.CurrentCultureIgnoreCase)).ToList();
 
             foreach (var panel in panels)
             {
@@ -59,33 +62,56 @@ namespace Menu
         
         private void Start()
         {
-            OpenMenu("MainMenu");
+            OpenPanel("MainMenu");
         }
         
-        private void OpenMenu(string menuName)
+        private void OpenPanel(string panelName)
         {
-            var target = _document.rootVisualElement.Q<VisualElement>(menuName+"Panel");
+            var target = _document.rootVisualElement.Q<VisualElement>(panelName+"Panel");
+            if (_currentPanel != null) _currentPanel.visible = false;
             if (_history.Count != 0) _history.Peek().visible = false;
             _history.Push(target);
             target.visible = true;
         }
         
-        private void OnBackButtonClicked()
+        private void ClosePanel()
         {
             if (_history.Count <= 1) return;
+            if (_currentPanel != null) _currentPanel.visible = false;
             var target = _history.Pop();
             target.visible = false;
             _history.Peek().visible = true;
         }
 
+        private void OpenSubpanel(string subpanelName)
+        {
+            if (_currentPanel != null) _currentPanel.visible = false;
+            _currentPanel = _document.rootVisualElement.Q<VisualElement>(subpanelName+"Subpanel");
+            _currentPanel.visible = true;
+        }
+
+        private void CloseSubpanel()
+        {
+            if (_currentPanel == null) return;
+            _currentPanel.visible = false;
+            _currentPanel = null;
+        }
+        
+        private void CloseMenu()
+        {
+            _history.Clear();
+            _document.enabled = false;
+        }
+
         private void OnPlayButtonClicked()
         {
             GameManager.Instance.LoadScene("DefaultScene");
+            CloseMenu();
         }
 
         private void OnSettingsButtonClicked()
         {
-            OpenMenu("Settings");
+            OpenPanel("Settings");
         }
 
         private void OnQuitButtonClicked()
@@ -93,26 +119,14 @@ namespace Menu
             Application.Quit();
         }
 
-        // Open a menu and record it in history
-        [Obsolete] public void OpenMenu(MenuBase menu)
+        private void OnAudioButtonClicked()
         {
-            if (menu == null) { Debug.LogError("[UIManager] Menu is null!"); return; }
-            
-            if (_currentMenu != null)
-            {
-                _currentMenu.Close();
-                _historyOld.Push(_currentMenu);
-            }
-            
-            _currentMenu = menu;
-            _currentMenu.Open();
+            OpenSubpanel("Audio");
         }
 
-        // Close menu and clear history
-        [Obsolete] public void CloseMenu()
+        private void OnGraphicsButtonClicked()
         {
-            _currentMenu?.Close();
-            _historyOld.Clear();
+            OpenSubpanel("Graphics");
         }
     }
 }

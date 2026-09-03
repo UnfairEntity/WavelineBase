@@ -7,7 +7,69 @@
     width: auto;
     font-size: 32px;
     position: relative;
-    -unity-text-auto-size: none;
+    -unity-text-auto-size: best-fit 10px 100px;
+    -unity-text-generator: advanced;
+    aspect-ratio: auto;
+    background-image: none;
+    background-repeat: no-repeat no-repeat;
+    -unity-slice-type: sliced;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-right-width: 4px;
+    border-top-width: 4px;
+    flex-basis: auto;
+    flex-grow: 0;
+    top: auto;
+    margin-top: 8%;
+    margin-right: 8%;
+    margin-bottom: 8%;
+    margin-left: 8%;
+    padding-top: 0%;
+    padding-right: 1%;
+    padding-bottom: 0%;
+    padding-left: 1%;
+    border-bottom-width: 4px;
+    border-left-width: 4px;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    background-color: rgba(255, 255, 255, 0);
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    text-shadow: 0 0 0 rgb(255, 255, 255);
+    height: 16%;
+    -unity-text-align: middle-right;
+    white-space: nowrap;
+    rotate: -10deg;
+    transform-origin: left;
+    transition-duration: 0.05s;
+}
+
+.menu-button:hover {
+    translate: 0 0;
+    scale: 1.2 1.2;
+    transition-duration: 0.05s;
+    border-left-color: rgba(255, 255, 255, 0);
+    border-right-color: rgba(255, 255, 255, 0);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.menu-button:active {
+    align-items: flex-start;
+    align-self: flex-start;
+    width: auto;
+    font-size: 32px;
+    position: relative;
+    -unity-text-auto-size: best-fit 10px 100px;
     -unity-text-generator: advanced;
     aspect-ratio: auto;
     background-image: none;
@@ -27,10 +89,10 @@
     margin-right: 5%;
     margin-bottom: 5%;
     margin-left: 5%;
-    padding-top: 5%;
-    padding-right: 5%;
-    padding-bottom: 5%;
-    padding-left: 5%;
+    padding-top: 0%;
+    padding-right: 1%;
+    padding-bottom: 0%;
+    padding-left: 1%;
     border-bottom-width: 4px;
     border-left-width: 4px;
     border-left-color: rgb(255, 255, 255);
@@ -41,80 +103,7 @@
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
     text-shadow: 0 0 0 rgb(255, 255, 255);
-    height: 32px;
-    -unity-text-align: middle-right;
-    white-space: nowrap;
-    rotate: -10deg;
-    transform-origin: left;
-    transition-duration: 0.05s;
-}
-
-.menu-button:hover {
-    translate: 0 0;
-    scale: 1.2 1.2;
-    -unity-text-outline-color: rgb(255, 255, 255);
-    -unity-text-outline-width: 0;
-    background-color: rgba(255, 255, 255, 0);
-    background-image: none;
-    rotate: -10deg;
-    -unity-font-style: bold;
-    font-size: 32px;
-    transition-duration: 0.05s;
-    border-left-color: rgba(255, 255, 255, 0);
-    border-right-color: rgba(255, 255, 255, 0);
-    border-top-color: rgb(255, 255, 255);
-    border-bottom-color: rgb(255, 255, 255);
-    border-top-width: 5px;
-    border-right-width: 5px;
-    border-bottom-width: 5px;
-    border-left-width: 5px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.menu-button:active {
-    align-items: flex-start;
-    align-self: flex-start;
-    width: auto;
-    font-size: 32px;
-    position: relative;
-    -unity-text-auto-size: none;
-    -unity-text-generator: standard;
-    aspect-ratio: auto;
-    background-image: none;
-    background-repeat: no-repeat no-repeat;
-    -unity-slice-type: sliced;
-    -unity-background-image-tint-color: rgb(255, 255, 255);
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-    border-right-width: 4px;
-    border-top-width: 4px;
-    flex-basis: auto;
-    flex-grow: 0;
-    top: auto;
-    margin-top: 5%;
-    margin-right: 5%;
-    margin-bottom: 5%;
-    margin-left: 5%;
-    padding-top: 20px;
-    padding-right: 20px;
-    padding-bottom: 20px;
-    padding-left: 20px;
-    border-bottom-width: 4px;
-    border-left-width: 4px;
-    border-left-color: rgb(255, 255, 255);
-    border-right-color: rgb(255, 255, 255);
-    border-top-color: rgb(255, 255, 255);
-    border-bottom-color: rgb(255, 255, 255);
-    background-color: rgba(255, 255, 255, 0);
-    color: rgb(255, 255, 255);
-    -unity-font-style: bold;
-    text-shadow: 0 0 0 rgb(255, 255, 255);
-    height: 32px;
+    height: 16%;
     -unity-text-align: middle-right;
     white-space: nowrap;
     rotate: -10deg;
@@ -142,7 +131,7 @@
     bottom: 75%;
     left: 10%;
     top: 5%;
-    -unity-font-definition: url("project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=c51ed4ee338c1674aa24717acc9ccc3b&type=3#NotInter-Regular");
+    -unity-font-definition: url("project://database/Assets/Menu/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=c51ed4ee338c1674aa24717acc9ccc3b&type=3#NotInter-Regular");
     color: rgb(255, 255, 255);
     font-size: 64px;
     -unity-text-align: upper-center;
@@ -150,7 +139,7 @@
 
 .menu-button-panel {
     flex-grow: 1;
-    right: 50%;
+    right: 75%;
     left: 5%;
     top: 30%;
     width: auto;
@@ -176,4 +165,14 @@
     transition-delay: 0s, 0s;
     display: flex;
     visibility: visible;
+}
+
+.menu-subpanel {
+    position: absolute;
+    top: 30%;
+    bottom: 5%;
+    right: 5%;
+    left: 30%;
+    flex-grow: 1;
+    visibility: hidden;
 }

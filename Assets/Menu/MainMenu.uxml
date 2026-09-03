@@ -16,5 +16,11 @@
             <ui:Button text="Graphics" name="GraphicsButton" class="menu-button"/>
             <ui:Button text="Back" name="BackButton" class="menu-button"/>
         </ui:VisualElement>
+        <ui:VisualElement name="AudioSubpanel" class="menu-subpanel" style="visibility: visible;">
+            <ui:VisualElement name="SettingsEntry" style="flex-grow: 1; border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-left-width: 2px; border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); padding-right: 1%; padding-left: 1%; padding-bottom: 1%; padding-top: 1%; position: absolute; right: 0%; left: 0%;">
+                <ui:Label text="Master Volume" style="font-size: 24px; -unity-font-style: bold; color: rgb(255, 255, 255); width: 50%; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="GraphicsSubpanel" class="menu-subpanel"/>
     </ui:VisualElement>
 </ui:UXML>
