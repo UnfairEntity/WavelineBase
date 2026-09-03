@@ -10,10 +10,5 @@ namespace Game
         {
             SceneManager.LoadScene(sceneName);
         }
-
-        public void QuitGame()
-        {
-            Application.Quit();
-        }
     }
 }

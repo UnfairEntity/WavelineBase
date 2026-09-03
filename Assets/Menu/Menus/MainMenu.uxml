@@ -1,0 +1,20 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Menu/MenuStyles.uss?fileID=7433441132597879392&amp;guid=03ae973316e12974388a278390e9f085&amp;type=3#MenuStyles"/>
+    <ui:Image scale-mode="ScaleAndCrop" source="project://database/Assets/Resources/UI/MenuBackgroundDefault.png?fileID=2800000&amp;guid=e4f9f6d7e6d6a6744b7e879abc2f3db0&amp;type=3#MenuBackgroundDefault" name="Background" class="menu-background"/>
+    <ui:VisualElement name="MainMenuPanel" class="menu-panel" style="visibility: hidden;">
+        <ui:Label text="Waveline Base Project" name="TitleText" class="menu-title"/>
+        <ui:VisualElement name="Buttons" class="menu-button-panel">
+            <ui:Button text="Play" name="PlayButton" class="menu-button"/>
+            <ui:Button text="Settings" name="SettingsButton" class="menu-button"/>
+            <ui:Button text="Quit" name="QuitButton" class="menu-button"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="SettingsPanel" class="menu-panel">
+        <ui:Label text="Settings" name="TitleText" class="menu-title"/>
+        <ui:VisualElement name="Buttons" class="menu-button-panel">
+            <ui:Button text="Audio" name="AudioButton" class="menu-button"/>
+            <ui:Button text="Graphics" name="GraphicsButton" class="menu-button"/>
+            <ui:Button text="Back" name="BackButton" class="menu-button"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
