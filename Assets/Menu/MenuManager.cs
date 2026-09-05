@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Audio;
 using Core;
 using Game;
 using UnityEngine;
@@ -19,10 +20,19 @@ namespace Menu
         private Button _settingsButton;
         private Button _quitButton;
         
-        // Settings Menu
+        // Settings Menu - Main
         private Button _audioButton;
         private Button _graphicsButton;
-
+        
+        // Settings Menu - Audio
+        private SliderInt _masterSlider;
+        private SliderInt _musicSlider;
+        private SliderInt _sfxSlider;
+        private SliderInt _uiSlider;
+        
+        // Settings Menu - Graphics
+        
+        
         protected override void Awake()
         {
             base.Awake();
@@ -35,6 +45,11 @@ namespace Menu
             
             _audioButton = _document.rootVisualElement.Q<Button>("AudioButton");
             _graphicsButton = _document.rootVisualElement.Q<Button>("GraphicsButton");
+            
+            _masterSlider = _document.rootVisualElement.Q<SliderInt>("MasterVolume");
+            _musicSlider = _document.rootVisualElement.Q<SliderInt>("MusicVolume");
+            _sfxSlider = _document.rootVisualElement.Q<SliderInt>("SFXVolume");
+            _uiSlider = _document.rootVisualElement.Q<SliderInt>("UIVolume");
 
             _playButton.clicked += OnPlayButtonClicked;
             _settingsButton.clicked += OnSettingsButtonClicked;
@@ -42,6 +57,11 @@ namespace Menu
             
             _audioButton.clicked += OnAudioButtonClicked;
             _graphicsButton.clicked += OnGraphicsButtonClicked;
+
+            _masterSlider.RegisterValueChangedCallback(OnMasterSliderChanged);
+            _musicSlider.RegisterValueChangedCallback(OnMusicSliderChanged);
+            _sfxSlider.RegisterValueChangedCallback(OnSfxSliderChanged);
+            _uiSlider.RegisterValueChangedCallback(OnUiSliderChanged);
             
             var backButtons = _document.rootVisualElement.Query<Button>("BackButton").ToList();
 
@@ -59,10 +79,15 @@ namespace Menu
                 panel.visible = false;
             }
         }
-        
+
         private void Start()
         {
-            OpenPanel("MainMenu");
+            _masterSlider.value = Mathf.RoundToInt(AudioManager.Instance.GetVolume(AudioCategory.Master));
+            _musicSlider.value = Mathf.RoundToInt(AudioManager.Instance.GetVolume(AudioCategory.Music));
+            _sfxSlider.value = Mathf.RoundToInt(AudioManager.Instance.GetVolume(AudioCategory.Sfx));
+            _uiSlider.value = Mathf.RoundToInt(AudioManager.Instance.GetVolume(AudioCategory.Ui));
+            
+            OpenPanel("MainMenu"); 
         }
         
         private void OpenPanel(string panelName)
@@ -70,8 +95,8 @@ namespace Menu
             var target = _document.rootVisualElement.Q<VisualElement>(panelName+"Panel");
             if (_currentPanel != null) _currentPanel.visible = false;
             if (_history.Count != 0) _history.Peek().visible = false;
-            _history.Push(target);
             target.visible = true;
+            _history.Push(target);
         }
         
         private void ClosePanel()
@@ -81,12 +106,15 @@ namespace Menu
             var target = _history.Pop();
             target.visible = false;
             _history.Peek().visible = true;
+            CloseSubpanel();
         }
 
         private void OpenSubpanel(string subpanelName)
         {
+            var target = _document.rootVisualElement.Q<VisualElement>(subpanelName+"Subpanel");
+            if (_currentPanel == target) return;
             if (_currentPanel != null) _currentPanel.visible = false;
-            _currentPanel = _document.rootVisualElement.Q<VisualElement>(subpanelName+"Subpanel");
+            _currentPanel = target;
             _currentPanel.visible = true;
         }
 
@@ -112,6 +140,7 @@ namespace Menu
         private void OnSettingsButtonClicked()
         {
             OpenPanel("Settings");
+            OpenSubpanel("Audio");
         }
 
         private void OnQuitButtonClicked()
@@ -127,6 +156,26 @@ namespace Menu
         private void OnGraphicsButtonClicked()
         {
             OpenSubpanel("Graphics");
+        }
+        
+        private static void OnMasterSliderChanged(ChangeEvent<int> evt)
+        {
+            AudioManager.Instance.SetVolume(AudioCategory.Master, evt.newValue);
+        }
+        
+        private static void OnMusicSliderChanged(ChangeEvent<int> evt)
+        {
+            AudioManager.Instance.SetVolume(AudioCategory.Music, evt.newValue);
+        }
+
+        private static void OnSfxSliderChanged(ChangeEvent<int> evt)
+        {
+            AudioManager.Instance.SetVolume(AudioCategory.Sfx, evt.newValue);
+        }
+
+        private static void OnUiSliderChanged(ChangeEvent<int> evt)
+        { 
+            AudioManager.Instance.SetVolume(AudioCategory.Ui, evt.newValue);
         }
     }
 }
