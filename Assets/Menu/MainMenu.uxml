@@ -9,7 +9,7 @@
             <ui:Button text="Quit" name="QuitButton" class="menu-button"/>
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="SettingsPanel" class="menu-panel" style="visibility: hidden;">
+    <ui:VisualElement name="SettingsPanel" class="menu-panel" style="visibility: visible;">
         <ui:Label text="Settings" name="TitleText" class="menu-title"/>
         <ui:VisualElement name="Buttons" class="menu-button-panel">
             <ui:Button text="Audio" name="AudioButton" class="menu-button"/>
@@ -34,7 +34,7 @@
                 <ui:SliderInt label="" value="90" high-value="100" name="UIVolume" fill="true" class="settings-entry-sliderint"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="GraphicsSubpanel" class="menu-subpanel" style="visibility: hidden;">
+        <ui:VisualElement name="GraphicsSubpanel" class="menu-subpanel" style="visibility: visible;">
             <ui:VisualElement name="SettingsEntry" class="settings-entry">
                 <ui:Label text="Resolution" class="settings-entry-label" style="-unity-font-definition: initial;"/>
                 <ui:DropdownField label="" choices="1920x1080,1280x720" index="0" name="Resolution" class="settings-entry-dropdown"/>
@@ -49,7 +49,7 @@
             </ui:VisualElement>
             <ui:VisualElement name="SettingsEntry" class="settings-entry">
                 <ui:Label text="Anti-Aliasing Quality" class="settings-entry-label"/>
-                <ui:SliderInt label="" value="4" high-value="4" name="AntiAliasingQuality" fill="true" class="settings-entry-sliderint"/>
+                <ui:SliderInt label="" value="3" high-value="3" name="AntiAliasingQuality" fill="true" class="settings-entry-sliderint"/>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

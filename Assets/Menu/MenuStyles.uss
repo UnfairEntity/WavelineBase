@@ -131,7 +131,7 @@
     bottom: 75%;
     left: 10%;
     top: 5%;
-    -unity-font-definition: url("project://database/Assets/Menu/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2230732570650464555&guid=c51ed4ee338c1674aa24717acc9ccc3b&type=3#NotInter-Regular");
+    -unity-font-definition: url("project://database/Library/unity%20default%20resources?fileID=10102&guid=0000000000000000e000000000000000&type=0#LegacyRuntime");
     color: rgb(255, 255, 255);
     font-size: 64px;
     -unity-text-align: upper-center;

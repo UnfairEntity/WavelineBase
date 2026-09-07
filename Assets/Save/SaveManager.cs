@@ -32,11 +32,11 @@ namespace Core
 
         // ---------------- Settings (PlayerPrefs) ----------------
 
-        public void SaveFloat(string key, float value) { PlayerPrefs.SetFloat(key, value); PlayerPrefs.Save(); }
-        public float LoadFloat(string key, float defaultValue = 0f) => PlayerPrefs.GetFloat(key, defaultValue);
+        public static void SaveFloat(string key, float value) { PlayerPrefs.SetFloat(key, value); PlayerPrefs.Save(); }
+        public static float LoadFloat(string key, float defaultValue = 0f) => PlayerPrefs.GetFloat(key, defaultValue);
 
-        public void SaveInt(string key, int value) { PlayerPrefs.SetInt(key, value); PlayerPrefs.Save(); }
-        public int LoadInt(string key, int defaultValue = 0) => PlayerPrefs.GetInt(key, defaultValue);
+        public static void SaveInt(string key, int value) { PlayerPrefs.SetInt(key, value); PlayerPrefs.Save(); }
+        public static int LoadInt(string key, int defaultValue = 0) => PlayerPrefs.GetInt(key, defaultValue);
 
         public void SaveBool(string key, bool value) { PlayerPrefs.SetInt(key, value ? 1 : 0); PlayerPrefs.Save(); }
         public bool LoadBool(string key, bool defaultValue = false) => PlayerPrefs.GetInt(key, defaultValue ? 1 : 0) == 1;
@@ -44,7 +44,7 @@ namespace Core
         public void SaveString(string key, string value) { PlayerPrefs.SetString(key, value); PlayerPrefs.Save(); }
         public string LoadString(string key, string defaultValue = "") => PlayerPrefs.GetString(key, defaultValue);
 
-        public bool HasSetting(string key) => PlayerPrefs.HasKey(key);
+        public static bool HasSetting(string key) => PlayerPrefs.HasKey(key);
         public void DeleteSetting(string key) => PlayerPrefs.DeleteKey(key);
 
         /// <summary>

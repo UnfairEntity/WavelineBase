@@ -11,7 +11,7 @@ namespace Core.Events
         public void Raise()
         {
             // Iterate backwards: listeners may remove themselves on response
-            for (int i = _listeners.Count - 1; i >= 0; i--)
+            for (var i = _listeners.Count - 1; i >= 0; i--)
                 _listeners[i].OnEventRaised();
         }
  

@@ -5,6 +5,7 @@ using Core;
 using Game;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Button = UnityEngine.UIElements.Button;
 
 namespace Menu
 {
@@ -31,7 +32,10 @@ namespace Menu
         private SliderInt _uiSlider;
         
         // Settings Menu - Graphics
-        
+        private DropdownField _resolutionDropdown;
+        private DropdownField _displayModeDropdown;
+        private SliderInt _vSyncSlider;
+        private SliderInt _antiAliasingSlider;
         
         protected override void Awake()
         {
@@ -51,6 +55,11 @@ namespace Menu
             _sfxSlider = _document.rootVisualElement.Q<SliderInt>("SFXVolume");
             _uiSlider = _document.rootVisualElement.Q<SliderInt>("UIVolume");
 
+            _resolutionDropdown = _document.rootVisualElement.Q<DropdownField>("Resolution");
+            _displayModeDropdown = _document.rootVisualElement.Q<DropdownField>("DisplayMode");
+            _vSyncSlider = _document.rootVisualElement.Q<SliderInt>("VSyncFrames");
+            _antiAliasingSlider = _document.rootVisualElement.Q<SliderInt>("AntiAliasingQuality");
+
             _playButton.clicked += OnPlayButtonClicked;
             _settingsButton.clicked += OnSettingsButtonClicked;
             _quitButton.clicked += OnQuitButtonClicked;
@@ -62,6 +71,12 @@ namespace Menu
             _musicSlider.RegisterValueChangedCallback(OnMusicSliderChanged);
             _sfxSlider.RegisterValueChangedCallback(OnSfxSliderChanged);
             _uiSlider.RegisterValueChangedCallback(OnUiSliderChanged);
+            
+            _resolutionDropdown.RegisterValueChangedCallback(OnResolutionChanged);
+            _displayModeDropdown.RegisterValueChangedCallback(OnDisplayModeChanged);
+            _vSyncSlider.RegisterValueChangedCallback(OnVSyncSliderChanged);
+            _antiAliasingSlider.RegisterValueChangedCallback(OnAntiAliasingSliderChanged);
+            
             
             var backButtons = _document.rootVisualElement.Query<Button>("BackButton").ToList();
 
@@ -87,9 +102,56 @@ namespace Menu
             _sfxSlider.value = Mathf.RoundToInt(AudioManager.Instance.GetVolume(AudioCategory.Sfx));
             _uiSlider.value = Mathf.RoundToInt(AudioManager.Instance.GetVolume(AudioCategory.Ui));
             
+            _resolutionDropdown.value = Screen.currentResolution.width + "x" + Screen.currentResolution.height;
+            _displayModeDropdown.value = ToDisplayModeName(Screen.fullScreenMode);
+            _vSyncSlider.value = QualitySettings.vSyncCount;
+            _antiAliasingSlider.value = ToAntiAliasingQuality(QualitySettings.antiAliasing);
+            
             OpenPanel("MainMenu"); 
         }
+
+        private static string ToDisplayModeName(FullScreenMode fullScreenMode)
+        {
+            return fullScreenMode switch
+            {
+                FullScreenMode.ExclusiveFullScreen => "Fullscreen",
+                FullScreenMode.FullScreenWindow => "Windowed Fullscreen",
+                _ => "Windowed"
+            };
+        }
         
+        private static FullScreenMode FromDisplayModeName(string modeName)
+        {
+            return modeName switch
+            {
+                "Fullscreen" => FullScreenMode.ExclusiveFullScreen,
+                "Windowed Fullscreen" => FullScreenMode.FullScreenWindow,
+                _ => FullScreenMode.MaximizedWindow
+            };
+        }
+        
+        private static int ToAntiAliasingQuality(int value)
+        {
+            return value switch
+            {
+                0 => 0,
+                2 => 1,
+                4 => 2,
+                _ => 3
+            };
+        }
+        
+        private static int FromAntiAliasingQuality(int value)
+        {
+            return value switch
+            {
+                0 => 0,
+                1 => 2,
+                2 => 4,
+                _ => 8
+            };
+        }
+
         private void OpenPanel(string panelName)
         {
             var target = _document.rootVisualElement.Q<VisualElement>(panelName+"Panel");
@@ -133,7 +195,7 @@ namespace Menu
 
         private void OnPlayButtonClicked()
         {
-            GameManager.Instance.LoadScene("DefaultScene");
+            GameManager.LoadScene("DefaultScene");
             CloseMenu();
         }
 
@@ -143,7 +205,7 @@ namespace Menu
             OpenSubpanel("Audio");
         }
 
-        private void OnQuitButtonClicked()
+        private static void OnQuitButtonClicked()
         {
             Application.Quit();
         }
@@ -176,6 +238,32 @@ namespace Menu
         private static void OnUiSliderChanged(ChangeEvent<int> evt)
         { 
             AudioManager.Instance.SetVolume(AudioCategory.Ui, evt.newValue);
+        }
+        
+        private static void OnResolutionChanged(ChangeEvent<string> evt)
+        {
+            var resolution = evt.newValue.Split('x');
+            Screen.SetResolution(int.Parse(resolution[0]), int.Parse(resolution[1]), Screen.fullScreen);
+            SaveManager.SaveInt("ResolutionX", Screen.currentResolution.width);
+            SaveManager.SaveInt("ResolutionY", Screen.currentResolution.height);
+        }
+        
+        private static void OnDisplayModeChanged(ChangeEvent<string> evt)
+        {
+            Screen.fullScreenMode = FromDisplayModeName(evt.newValue);
+            SaveManager.SaveInt("FullScreenMode", (int)Screen.fullScreenMode);
+        }
+        
+        private static void OnVSyncSliderChanged(ChangeEvent<int> evt)
+        {
+            QualitySettings.vSyncCount = evt.newValue;
+            SaveManager.SaveInt("VSyncCount", QualitySettings.vSyncCount);
+        }
+
+        private static void OnAntiAliasingSliderChanged(ChangeEvent<int> evt)
+        { 
+            QualitySettings.antiAliasing = FromAntiAliasingQuality(evt.newValue);
+            SaveManager.SaveInt("AntiAliasing", QualitySettings.antiAliasing);
         }
     }
 }

@@ -89,14 +89,14 @@ namespace Audio
             if (mixer != null)
                 mixer.SetFloat($"{category}Volume", LinearToDecibel(linear01));
 
-            SaveManager.Instance.SaveFloat(VolumeKey(category), linear01);
+            SaveManager.SaveFloat(VolumeKey(category), linear01);
             OnVolumeChanged?.Invoke(category, linear01);
         }
 
         private void LoadVolumes()
         {
             foreach (var category in AllCategories)
-                SetVolume(category, SaveManager.Instance.LoadFloat(VolumeKey(category), 1f));
+                SetVolume(category, SaveManager.LoadFloat(VolumeKey(category), 1f));
         }
 
         private static string VolumeKey(AudioCategory category) => $"Audio_{category}Volume";

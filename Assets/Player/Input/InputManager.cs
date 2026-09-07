@@ -143,8 +143,8 @@ namespace Player.Input
             foreach (string exclusion in rebindExclusions)
                 rebind = rebind.WithControlsExcluding(exclusion);
 
-            rebind.OnComplete(op => FinishRebind(playerIndex, actionName, playerInput, action, canceled: false, onComplete, onCanceled))
-                  .OnCancel(op => FinishRebind(playerIndex, actionName, playerInput, action, canceled: true, onComplete, onCanceled));
+            rebind.OnComplete(_ => FinishRebind(playerIndex, actionName, playerInput, action, canceled: false, onComplete, onCanceled))
+                  .OnCancel(_ => FinishRebind(playerIndex, actionName, playerInput, action, canceled: true, onComplete, onCanceled));
 
             _activeRebindOperation = rebind.Start();
             OnRebindStarted?.Invoke(playerIndex, actionName);
