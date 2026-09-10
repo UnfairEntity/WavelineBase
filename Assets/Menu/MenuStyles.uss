@@ -41,7 +41,7 @@
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
     text-shadow: 0 0 0 rgb(255, 255, 255);
-    height: 16%;
+    height: 18%;
     -unity-text-align: middle-right;
     white-space: nowrap;
     rotate: -10deg;
@@ -141,14 +141,16 @@
     flex-grow: 1;
     right: 75%;
     left: 5%;
-    top: 30%;
+    top: 25%;
     width: auto;
-    bottom: 5%;
+    bottom: 15%;
     height: auto;
     min-width: auto;
     min-height: auto;
     position: absolute;
-    justify-content: center;
+    justify-content: flex-end;
+    flex-basis: auto;
+    flex-direction: column;
 }
 
 .menu-panel {

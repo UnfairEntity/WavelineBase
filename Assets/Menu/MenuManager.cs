@@ -21,6 +21,10 @@ namespace Menu
         private Button _settingsButton;
         private Button _quitButton;
         
+        // Play Menu
+        private Button _soloButton;
+        private Button _lobbiesButton;
+        
         // Settings Menu - Main
         private Button _audioButton;
         private Button _graphicsButton;
@@ -47,6 +51,9 @@ namespace Menu
             _settingsButton = _document.rootVisualElement.Q<Button>("SettingsButton");
             _quitButton = _document.rootVisualElement.Q<Button>("QuitButton");
             
+            _soloButton = _document.rootVisualElement.Q<Button>("SoloButton");
+            _lobbiesButton = _document.rootVisualElement.Q<Button>("LobbiesButton");
+            
             _audioButton = _document.rootVisualElement.Q<Button>("AudioButton");
             _graphicsButton = _document.rootVisualElement.Q<Button>("GraphicsButton");
             
@@ -63,6 +70,9 @@ namespace Menu
             _playButton.clicked += OnPlayButtonClicked;
             _settingsButton.clicked += OnSettingsButtonClicked;
             _quitButton.clicked += OnQuitButtonClicked;
+            
+            _soloButton.clicked += OnSoloButtonClicked;
+            _lobbiesButton.clicked += OnLobbiesButtonClicked;
             
             _audioButton.clicked += OnAudioButtonClicked;
             _graphicsButton.clicked += OnGraphicsButtonClicked;
@@ -195,8 +205,7 @@ namespace Menu
 
         private void OnPlayButtonClicked()
         {
-            GameManager.LoadScene("DefaultScene");
-            CloseMenu();
+            OpenPanel("Play");
         }
 
         private void OnSettingsButtonClicked()
@@ -208,6 +217,17 @@ namespace Menu
         private static void OnQuitButtonClicked()
         {
             Application.Quit();
+        }
+
+        private void OnSoloButtonClicked()
+        {
+            GameManager.LoadScene("DefaultScene");
+            CloseMenu();
+        }
+
+        private void OnLobbiesButtonClicked()
+        {
+            OpenSubpanel("Lobbies");
         }
 
         private void OnAudioButtonClicked()
