@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Audio;
 using Core;
 using Game;
+using Menu.Components;
+using Network;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Button = UnityEngine.UIElements.Button;
@@ -24,6 +27,8 @@ namespace Menu
         // Play Menu
         private Button _soloButton;
         private Button _lobbiesButton;
+        private ScrollView _sessionList;
+        private Button _newLobbyButton;
         
         // Settings Menu - Main
         private Button _audioButton;
@@ -53,6 +58,8 @@ namespace Menu
             
             _soloButton = _document.rootVisualElement.Q<Button>("SoloButton");
             _lobbiesButton = _document.rootVisualElement.Q<Button>("LobbiesButton");
+            _sessionList = _document.rootVisualElement.Q<ScrollView>("SessionList");
+            _newLobbyButton = _document.rootVisualElement.Q<Button>("NewLobbyButton");
             
             _audioButton = _document.rootVisualElement.Q<Button>("AudioButton");
             _graphicsButton = _document.rootVisualElement.Q<Button>("GraphicsButton");
@@ -73,6 +80,7 @@ namespace Menu
             
             _soloButton.clicked += OnSoloButtonClicked;
             _lobbiesButton.clicked += OnLobbiesButtonClicked;
+            _newLobbyButton.clicked += OnNewLobbyButtonClicked;
             
             _audioButton.clicked += OnAudioButtonClicked;
             _graphicsButton.clicked += OnGraphicsButtonClicked;
@@ -118,6 +126,29 @@ namespace Menu
             _antiAliasingSlider.value = ToAntiAliasingQuality(QualitySettings.antiAliasing);
             
             OpenPanel("MainMenu"); 
+        }
+
+        private async void RefreshSessions()
+        {
+            try
+            {
+                var results = await NetworkManager.Instance.QuerySessionsAsync();
+                foreach (var result in results.Sessions)
+                {
+                    var lobbyButton = new LobbyButton
+                    {
+                        SessionName = result.Name,
+                        PlayerCount = result.MaxPlayers - result.AvailableSlots,
+                        MaxPlayers = result.MaxPlayers
+                    };
+                    lobbyButton.clicked += () => OnLobbyButtonClicked(result.Id);
+                    _sessionList.Add(lobbyButton);
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError(e);
+            }
         }
 
         private static string ToDisplayModeName(FullScreenMode fullScreenMode)
@@ -228,6 +259,17 @@ namespace Menu
         private void OnLobbiesButtonClicked()
         {
             OpenSubpanel("Lobbies");
+            RefreshSessions();
+        }
+
+        private void OnLobbyButtonClicked(string lobbyId)
+        {
+            _ = NetworkManager.Instance.JoinSessionById(lobbyId);
+        }
+
+        private void OnNewLobbyButtonClicked()
+        {
+            OpenSubpanel("NewLobby");
         }
 
         private void OnAudioButtonClicked()

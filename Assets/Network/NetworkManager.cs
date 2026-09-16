@@ -12,7 +12,7 @@ namespace Network
     {
         public ISession CurrentSession;
         
-        private QuerySessionsOptions _queryOptions; 
+        private readonly QuerySessionsOptions _queryOptions = new QuerySessionsOptions(); 
         
         [Header("Host Settings")]
         [SerializeField] public int maxPlayers = 4;

@@ -60,21 +60,21 @@
             <ui:Button text="Lobbies" name="LobbiesButton" class="menu-button"/>
             <ui:Button text="Back" name="BackButton" class="menu-button"/>
         </ui:VisualElement>
-        <ui:VisualElement name="LobbiesSubpanel" class="menu-subpanel" style="visibility: visible;">
-            <ui:Label text="Server List" class="menu-title" style="bottom: 85%; top: 0%; -unity-font-style: normal; border-bottom-width: 4px; border-bottom-color: rgb(255, 255, 255);"/>
-            <ui:ScrollView vertical-scroller-visibility="Hidden" style="top: 15%; bottom: 0%; left: 0%; right: 0%; height: 85%;">
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
-                <ui:Button text="Button"/>
+        <ui:VisualElement name="LobbiesSubpanel" class="menu-subpanel">
+            <ui:Label text="Server List" class="menu-title subpanel-title"/>
+            <ui:ScrollView vertical-scroller-visibility="Hidden" name="SessionList" style="top: 15%; bottom: 15%; left: 0%; right: 0%; height: 70%;"/>
+            <ui:Button text="New Lobby" name="NewLobbyButton" class="create-lobby-button"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="NewLobbySubpanel" class="menu-subpanel" style="visibility: visible;">
+            <ui:Label text="New Lobby" class="menu-title subpanel-title"/>
+            <ui:ScrollView vertical-scroller-visibility="Hidden" name="LobbySettings" style="top: 15%; bottom: 0%; left: 0%; right: 0%; height: 85%; position: relative;">
+                <ui:Label text="Lobby Name" style="-unity-text-align: upper-center; -unity-font-style: bold; color: rgb(255, 255, 255); font-size: 24px;"/>
+                <ui:TextField label="" placeholder-text="Lobby name" value="Unnamed Lobby" name="LobbyName" style="-unity-font-style: bold; color: rgb(0, 0, 0); -unity-text-align: middle-left; font-size: 16px; -unity-text-auto-size: none;"/>
+                <ui:Label text="Lobby Password" style="-unity-text-align: upper-center; -unity-font-style: bold; color: rgb(255, 255, 255); font-size: 24px;"/>
+                <ui:TextField label="" placeholder-text="No password" value="" name="LobbyPassword" style="-unity-font-style: bold; color: rgb(0, 0, 0); -unity-text-align: middle-left; font-size: 16px; -unity-text-auto-size: none;"/>
+                <ui:Button text="Create Lobby" name="CreateLobbyButton" class="create-lobby-button" style="position: relative; width: 50%; padding-top: 1%; margin-top: 5%; margin-right: 0%; margin-bottom: 5%; margin-left: 0%;"/>
             </ui:ScrollView>
         </ui:VisualElement>
-        <ui:VisualElement name="CreateLobbySubpanel" class="menu-subpanel"/>
     </ui:VisualElement>
     <ui:VisualElement name="LobbyPanel" class="menu-panel" style="visibility: hidden;">
         <ui:Label text="Lobby" name="LobbyNameText" class="menu-title"/>

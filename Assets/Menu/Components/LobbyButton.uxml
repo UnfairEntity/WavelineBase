@@ -1,0 +1,7 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="false">
+    <Style src="project://database/Assets/Menu/MenuStyles.uss?fileID=7433441132597879392&amp;guid=03ae973316e12974388a278390e9f085&amp;type=3#MenuStyles"/>
+    <ui:Button text="" class="lobby-button">
+        <ui:Label text="Lobby Name" name="NameText" picking-mode="Ignore" class="lobby-button__name-text"/>
+        <ui:Label text="0/4" picking-mode="Ignore" name="PlayersText" class="lobby-button__players-text"/>
+    </ui:Button>
+</ui:UXML>
