@@ -30,6 +30,11 @@ namespace Menu
         private ScrollView _sessionList;
         private Button _newLobbyButton;
         
+        // Lobby Menu
+        private TextField _lobbyName;
+        private TextField _lobbyPassword;
+        private Button _createLobbyButton;
+        
         // Settings Menu - Main
         private Button _audioButton;
         private Button _graphicsButton;
@@ -61,6 +66,10 @@ namespace Menu
             _sessionList = _document.rootVisualElement.Q<ScrollView>("SessionList");
             _newLobbyButton = _document.rootVisualElement.Q<Button>("NewLobbyButton");
             
+            _lobbyName = _document.rootVisualElement.Q<TextField>("LobbyName");
+            _lobbyPassword = _document.rootVisualElement.Q<TextField>("LobbyPassword");
+            _createLobbyButton = _document.rootVisualElement.Q<Button>("CreateLobbyButton");
+            
             _audioButton = _document.rootVisualElement.Q<Button>("AudioButton");
             _graphicsButton = _document.rootVisualElement.Q<Button>("GraphicsButton");
             
@@ -81,6 +90,8 @@ namespace Menu
             _soloButton.clicked += OnSoloButtonClicked;
             _lobbiesButton.clicked += OnLobbiesButtonClicked;
             _newLobbyButton.clicked += OnNewLobbyButtonClicked;
+            
+            _createLobbyButton.clicked += OnCreateLobbyButtonClicked;
             
             _audioButton.clicked += OnAudioButtonClicked;
             _graphicsButton.clicked += OnGraphicsButtonClicked;
@@ -270,6 +281,21 @@ namespace Menu
         private void OnNewLobbyButtonClicked()
         {
             OpenSubpanel("NewLobby");
+        }
+
+        private async void OnCreateLobbyButtonClicked()
+        {
+            try
+            {
+                NetworkManager.Instance.sessionName = _lobbyName.value;
+                NetworkManager.Instance.password = _lobbyPassword.value;
+                await NetworkManager.Instance.StartSessionAsHost();
+                OpenPanel("Lobby");
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError(e);
+            }
         }
 
         private void OnAudioButtonClicked()
