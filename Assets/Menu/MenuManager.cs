@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Audio;
 using Core;
 using Game;
 using Menu.Components;
 using Network;
+using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Button = UnityEngine.UIElements.Button;
@@ -24,13 +24,13 @@ namespace Menu
         private Button _settingsButton;
         private Button _quitButton;
         
-        // Play Menu
+        // Play Menu - Main
         private Button _soloButton;
         private Button _lobbiesButton;
         private ScrollView _sessionList;
         private Button _newLobbyButton;
         
-        // Lobby Menu
+        // Play Menu - New Lobby
         private TextField _lobbyName;
         private TextField _lobbyPassword;
         private Button _createLobbyButton;
@@ -105,7 +105,6 @@ namespace Menu
             _displayModeDropdown.RegisterValueChangedCallback(OnDisplayModeChanged);
             _vSyncSlider.RegisterValueChangedCallback(OnVSyncSliderChanged);
             _antiAliasingSlider.RegisterValueChangedCallback(OnAntiAliasingSliderChanged);
-            
             
             var backButtons = _document.rootVisualElement.Query<Button>("BackButton").ToList();
 
@@ -273,9 +272,22 @@ namespace Menu
             RefreshSessions();
         }
 
-        private void OnLobbyButtonClicked(string lobbyId)
+        private async void OnLobbyButtonClicked(string lobbyId)
         {
-            _ = NetworkManager.Instance.JoinSessionById(lobbyId);
+            try
+            {
+                // Join session
+                await NetworkManager.Instance.JoinSessionById(lobbyId);
+            
+                // Subscribe, update, and open lobby menu
+                NetworkManager.Instance.CurrentSession.Changed += UpdateLobby;
+                UpdateLobby();
+                OpenPanel("Lobby");
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError(e);
+            }
         }
 
         private void OnNewLobbyButtonClicked()
@@ -287,15 +299,40 @@ namespace Menu
         {
             try
             {
+                // Set properties
                 NetworkManager.Instance.sessionName = _lobbyName.value;
                 NetworkManager.Instance.password = _lobbyPassword.value;
+                
+                // Start session
                 await NetworkManager.Instance.StartSessionAsHost();
+                
+                // Subscribe, update, and open lobby menu
+                NetworkManager.Instance.CurrentSession.Changed += UpdateLobby;
+                UpdateLobby();
                 OpenPanel("Lobby");
             }
             catch (Exception e)
             {
                 UnityEngine.Debug.LogError(e);
             }
+        }
+        
+        private void UpdateLobby()
+        {
+            var session = NetworkManager.Instance.CurrentSession;
+            var isHost = session.IsHost;
+            var players = session.Players;
+
+            foreach (var player in players)
+            {
+                var playerName = player.GetPlayerName();
+                var isSelf = player.Id == session.CurrentPlayer.Id;
+                
+                // TODO: Add player entry
+            }
+            
+            // TODO: Add start button if host
+            throw new NotImplementedException();
         }
 
         private void OnAudioButtonClicked()
