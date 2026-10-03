@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core;
+using Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,7 +10,7 @@ namespace Player.Input
     /// <summary>
     /// PURPOSE: Owns local multiplayer join/leave and per-action rebinding.
     ///          Supports any number of local players from 1 upward (device-limited).
-    /// DEPENDENCIES: Input System package. Requires a PlayerInputManager component on
+    /// DEPENDENCIES: Core, Save, Input System package. Requires a PlayerInputManager component on
     ///               this same GameObject, configured in the Inspector with the shared
     ///               Player Prefab (must have a PlayerInput component pointing at your
     ///               PlayerInputActions asset) and your desired Joining Behavior.
@@ -22,8 +23,8 @@ namespace Player.Input
     public class InputManager : Singleton<InputManager>
     {
         [Header("Startup")]
-        [Tooltip("Joins one player automatically at Start so single-player games work with zero extra setup. Leave off for pure 'press any button to join' co-op flows.")]
-        [SerializeField] private bool autoJoinFirstPlayer = true;
+        [Tooltip("Joins one player automatically at Start. Off by default: InputManager starts in the Bootstrap scene, so an auto-joined player would be destroyed as soon as the first real scene loads. Place a Player in your gameplay scene (as DefaultScene does) or call JoinPlayer() after loading it instead.")]
+        [SerializeField] private bool autoJoinFirstPlayer;
 
         [Header("Rebind")]
         [Tooltip("Control paths excluded from rebind candidates so incidental mouse/stick noise can't get captured.")]
@@ -94,7 +95,7 @@ namespace Player.Input
             _activePlayers[playerInput.playerIndex] = playerInput;
             
             if (playerInput.actions == null) return;
-            string json = SaveManager.Instance.LoadString($"PlayerRebinds_{playerInput.playerIndex}", string.Empty);
+            string json = SaveManager.LoadString($"PlayerRebinds_{playerInput.playerIndex}", string.Empty);
             if (!string.IsNullOrEmpty(json))
                 playerInput.actions.LoadBindingOverridesFromJson(json);
             
@@ -167,7 +168,7 @@ namespace Player.Input
             }
             
             if (playerInput.actions == null) return;
-            SaveManager.Instance.SaveString($"PlayerRebinds_{playerIndex}", playerInput.actions.SaveBindingOverridesAsJson());
+            SaveManager.SaveString($"PlayerRebinds_{playerIndex}", playerInput.actions.SaveBindingOverridesAsJson());
             
             OnRebindComplete?.Invoke(playerIndex, actionName);
             onComplete?.Invoke();
@@ -178,7 +179,7 @@ namespace Player.Input
             if (!_activePlayers.TryGetValue(playerIndex, out var playerInput)) return;
             playerInput.actions.RemoveAllBindingOverrides();
 
-            SaveManager.Instance.DeleteSetting($"PlayerRebinds_{playerIndex}");
+            SaveManager.DeleteSetting($"PlayerRebinds_{playerIndex}");
         }
     }
 }

@@ -79,6 +79,8 @@
     <ui:VisualElement name="LobbyPanel" class="menu-panel" style="visibility: hidden;">
         <ui:Label text="Lobby" name="LobbyNameText" class="menu-title"/>
         <ui:VisualElement name="Buttons" class="menu-button-panel" style="top: 35%; bottom: 5%; left: 5%; right: 75%;">
+            <ui:Toggle label="Lock on start" value="true" name="LockOnStartToggle" class="lobby-toggle"/>
+            <ui:Button text="Start" name="StartGameButton" class="menu-button"/>
             <ui:Button text="Back" name="BackButton" class="menu-button"/>
         </ui:VisualElement>
         <ui:VisualElement name="Players" class="menu-button-panel" style="top: 35%; bottom: 5%; left: 75%; right: 5%;"/>

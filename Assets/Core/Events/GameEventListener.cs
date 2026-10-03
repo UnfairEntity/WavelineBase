@@ -8,9 +8,21 @@ namespace Core.Events
         public GameEvent @event;
         public UnityEvent response;
 
-        private void OnEnable() => @event.RegisterListener(this);
-        private void OnDisable() => @event.UnregisterListener(this);
+        private void OnEnable()
+        {
+            if (@event == null)
+            {
+                Debug.LogWarning($"[GameEventListener] No event assigned on '{name}'.", this);
+                return;
+            }
+            @event.RegisterListener(this);
+        }
 
-        public void OnEventRaised() => response.Invoke();
+        private void OnDisable()
+        {
+            if (@event != null) @event.UnregisterListener(this);
+        }
+
+        public void OnEventRaised() => response?.Invoke();
     }
 }

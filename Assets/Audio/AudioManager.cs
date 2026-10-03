@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Core;
+using Save;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -23,8 +24,8 @@ namespace Audio
     ///   - Music: one active track at a time with crossfade, a FIFO queue for what plays
     ///     next, and timestamped "keyframe" events read off the AudioTrackData asset.
     ///   - Per-category volume, routed through an AudioMixer and persisted via SaveManager.
-    /// DEPENDENCIES: An AudioMixer asset with exposed float parameters named
-    ///               "MasterVolume", "MusicVolume", "SFXVolume", "UIVolume".
+    /// DEPENDENCIES: Core, Save. An AudioMixer asset with exposed float parameters named
+    ///               "MasterVolume", "MusicVolume", "SfxVolume", "UiVolume" (i.e. "{AudioCategory}Volume").
     /// EVENTS PUBLISHED: OnVolumeChanged(AudioCategory, float), OnTrackChanged(AudioTrackData)
     /// PUBLIC API: PlayAtPoint, PlayAttached, PlayUI, SetVolume, GetVolume,
     ///             PlayMusic, QueueMusic, SkipMusic, StopMusic
@@ -68,11 +69,15 @@ namespace Audio
 
             BuildPool();
             SetupMusicSources();
+            // Read saved volumes now so GetVolume() is correct for anyone's Start(), regardless of order.
+            LoadVolumes();
         }
 
         private void Start()
         {
-            LoadVolumes();
+            // AudioMixer.SetFloat is unreliable during Awake, so push the loaded values to the mixer here.
+            foreach (var category in AllCategories)
+                ApplyToMixer(category, GetVolume(category));
         }
 
         // ---------------- Volume ----------------
@@ -86,8 +91,7 @@ namespace Audio
             linear01 = Mathf.Clamp01(linear01);
             _volumes[category] = linear01;
 
-            if (mixer != null)
-                mixer.SetFloat($"{category}Volume", LinearToDecibel(linear01));
+            ApplyToMixer(category, linear01);
 
             SaveManager.SaveFloat(VolumeKey(category), linear01);
             OnVolumeChanged?.Invoke(category, linear01);
@@ -96,7 +100,13 @@ namespace Audio
         private void LoadVolumes()
         {
             foreach (var category in AllCategories)
-                SetVolume(category, SaveManager.LoadFloat(VolumeKey(category), 1f));
+                _volumes[category] = Mathf.Clamp01(SaveManager.LoadFloat(VolumeKey(category), 1f));
+        }
+
+        private void ApplyToMixer(AudioCategory category, float linear01)
+        {
+            if (mixer != null)
+                mixer.SetFloat($"{category}Volume", LinearToDecibel(linear01));
         }
 
         private static string VolumeKey(AudioCategory category) => $"Audio_{category}Volume";
@@ -134,6 +144,7 @@ namespace Audio
                 var emitter = _pool[i];
                 if (emitter == null) { _pool.RemoveAt(i); continue; } // destroyed alongside a target it was attached to
                 if (!emitter.gameObject.activeSelf) return emitter;
+                if (emitter.TryReclaimOrphan()) return emitter; // one-shot stranded under a deactivated target
             }
 
             var extra = CreateEmitter(); // pool exhausted - grow rather than drop the sound
@@ -272,7 +283,10 @@ namespace Audio
             }
 
             _musicRoutine = null;
-            if (_musicQueue.Count > 0) SkipMusic();
+            if (_musicQueue.Count > 0)
+                SkipMusic();
+            else
+                _currentTrack = null; // nothing playing now, so the next QueueMusic starts immediately
         }
     }
 }
