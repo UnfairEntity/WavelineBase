@@ -144,6 +144,12 @@ MonoBehaviour:
     m_Bits: 4294967295
   autoClearanceFromPlayerPrefab: 1
   clearancePadding: 0
+  snapToGround: 1
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  groundProbeStartHeight: 0.25
+  groundProbeDistance: 10
   clearanceRadius: 0.5
   clearanceHeight: 1
   clearanceCenterOffset: {x: 0, y: 0, z: 0}

@@ -150,6 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Network.Spawning.SpawnPoint
   order: 2
   group: 
+  groundSnap: 0
   gizmoRadius: 0.5
   gizmoHeight: 1
 --- !u!4 &96472598
@@ -161,7 +162,7 @@ Transform:
   m_GameObject: {fileID: 96472596}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2, y: 1, z: -2}
+  m_LocalPosition: {x: -2, y: 1.5, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -335,6 +336,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Network.Spawning.SpawnPoint
   order: 1
   group: 
+  groundSnap: 0
   gizmoRadius: 0.5
   gizmoHeight: 1
 --- !u!4 &518560479
@@ -346,7 +348,7 @@ Transform:
   m_GameObject: {fileID: 518560477}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 1, z: 2}
+  m_LocalPosition: {x: 2, y: 1.5, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -383,6 +385,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Network.Spawning.SpawnPoint
   order: 0
   group: 
+  groundSnap: 0
   gizmoRadius: 0.5
   gizmoHeight: 1
 --- !u!4 &535197268
@@ -394,7 +397,7 @@ Transform:
   m_GameObject: {fileID: 535197266}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2, y: 1, z: 2}
+  m_LocalPosition: {x: -2, y: 1.5, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -431,6 +434,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Network.Spawning.SpawnPoint
   order: 3
   group: 
+  groundSnap: 0
   gizmoRadius: 0.5
   gizmoHeight: 1
 --- !u!4 &835411877
@@ -442,7 +446,7 @@ Transform:
   m_GameObject: {fileID: 835411875}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 1, z: -2}
+  m_LocalPosition: {x: 2, y: 1.5, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -233,6 +233,11 @@ value lives in `PlayerPrefs` or a JSON file on disk.
   whatever UI is showing the current binding. Overrides are saved per player index.
 - The project-wide actions setting (Project Settings › Input System Package) is
   currently unset; the Player prefab uses `PlayerInputActions` directly.
+- **Networked games**: with *Block Local Join In Networked Games* on (default),
+  `PlayerInputManager`'s join-by-button is turned off whenever a scene loads while Netcode
+  is running, and back on once a scene loads without it — so pressing Join can't add a
+  local, non-networked player to an online match. Turn it off only if you deliberately mix
+  local co-op with networking.
 
 ### AudioManager — categories and pooling
 - **Pick the right call**: `PlayAtPoint` for something that happens once at a fixed
@@ -385,13 +390,24 @@ each with the frame number. Pass a reason when calling `LeaveSession(reason)` fr
 
 ### SpawnManager and SpawnPoint — networked player spawning
 - **Set up a level**: add empty GameObjects with a `SpawnPoint` component where players
-  should appear. Position = where the player's pivot goes; rotation = facing.
-  `DefaultScene` has four at (±2, 0.55, ±2).
-- **Gizmo = the real check**: each SpawnPoint draws, in green, exactly the volume
-  `SpawnManager` will test there (the player's collider + padding, rotated with the
-  point). In edit mode it finds `SpawnManager` on a prefab in the project (the Network
-  prefab); grey means none was found and the point's *Gizmo fallback* sizes are shown.
-  If the shape overlaps the floor or a wall in the Scene view, that point will be skipped.
+  should appear; rotation = facing. `DefaultScene` has four around the origin.
+- **Ground snap** (on by default): a SpawnPoint marks a spot on the floor. `SpawnManager`
+  probes down from it (starting *Ground Probe Start Height* above, up to *Ground Probe
+  Distance* below, on *Ground Layers*, ignoring triggers and CharacterControllers) and
+  places the player's pivot so the clearance shape's lowest point rests *Floor Skin* above
+  the ground. Points never need moving when the player's size or pivot changes — place
+  them on or slightly above the floor. Each SpawnPoint's **Ground Snap** can override it:
+  *Use Spawn Manager* (default), *Snap*, or *Don't Snap* (pivot exactly at the point, e.g.
+  a mid-air or platform spawn). If no ground is found the point's own position is used and
+  a warning is logged once per point. Fallback-ring candidates are snapped individually,
+  so they follow slopes and steps.
+- **Gizmo = the real check**: each SpawnPoint draws exactly the volume `SpawnManager` will
+  test, at the position the player will actually get (snapped, with a line and small
+  marker linking the point to where the shape rests). Green = ok; **yellow** = snapping is
+  on but no ground was found below; grey = no SpawnManager found (the point's *Gizmo
+  fallback* sizes are shown). In edit mode it finds `SpawnManager` on a prefab in the
+  project (the Network prefab). If the shape overlaps a wall or object in the Scene view,
+  that point will be skipped.
 - `SpawnPoint` options: **Order** (used by Fixed mode) and **Group** (only points in
   `SpawnManager`'s active group are used; empty = all).
 - `SpawnManager` (on the Network prefab, server only) settings:
@@ -426,7 +442,8 @@ each with the frame number. Pass a reason when calling `LeaveSession(reason)` fr
   (despawns the old player object and spawns a new one, so it works whatever the
   NetworkTransform authority), `TryGetSpawnPose(clientId, out pose)`. Any time:
   `GetClearance()` (the `SpawnClearance` shape, with `Overlaps(...)` and `DrawGizmo(...)`)
-  and `ResolvePlayerPrefab()`. Reach it through `NetworkManager.Instance.Spawner`
+  and `ResolvePlayerPrefab()`, `ShouldSnap(point)`, `TryResolveSpawnPosition(point, out position)`.
+  Reach it through `NetworkManager.Instance.Spawner`
   (or `SpawnManager.Active` while playing).
 
 ### NetworkPlayer prefab and solo-only objects
@@ -464,6 +481,8 @@ no case gets worse. Two-instance cases: a build plus the Editor, or two builds.
 | 13 | Late join on: client connects while the host is still loading | `Holding connection…` then `Approved 1 held connection(s)`; client spawns after |
 | 14 | Spawn overlap: put an object on top of a SpawnPoint, start with 4 players and 4 points | blocked point skipped; warning `All spawn points blocked; using a free spot near…` only when every point is blocked |
 | 17 | Edit mode: select a SpawnPoint in `DefaultScene`; change the Player's CharacterController radius | green gizmo matches the player's capsule and updates with the change; on Start the log shows `Spawn clearance: Capsule from NetworkPlayer: CharacterController` |
+| 18 | Edit mode: change the Player's CharacterController height (e.g. 1 → 2), then raise one SpawnPoint 2 m into the air | gizmos stay resting on the floor at every height; the raised point shows a line down to the shape; players spawn standing on the floor, not inside it or dropping |
+| 19 | Move a SpawnPoint off the edge of the Plane | gizmo turns yellow; on Start a single `No ground within…` warning for that point |
 | 15 | In game, host quits | client returns to the menu with `Disconnected from the host…`; no errors |
 | 16 | Session list with more sessions than *Query Count* | scrolling to the bottom loads the next page; no duplicates; reopening Lobbies starts from the top |
 
@@ -492,8 +511,14 @@ Build logs are in `%USERPROFILE%\AppData\LocalLow\<Company>\<Product>\Player.log
   to 5 more pages load automatically. Sessions are de-duplicated by id and locked ones
   are skipped. Reopening Lobbies starts again from page 1; results from an older refresh
   are discarded.
-- Errors (sign-in still in progress, invalid password, failed join) are currently only
-  logged to the Console — an on-screen message area is on the roadmap.
+- **Status line**: `ShowStatus(message, StatusKind.Info/Error)` shows a one-line message
+  at the bottom of the menu (the `StatusText` label; info hides after 4 s, errors after
+  8 s) and logs it. Used for: still connecting, joining/creating, failed join/create (the
+  service's reason), invalid password, empty or failed server list, a failed Start, and
+  being removed from a session without asking (kicked, host gone, rejected — from
+  `NetworkManager.LastLeaveReason`). Messages survive the switch back to the Menu scene.
+- **Server list Refresh** (`RefreshSessionsButton`, top-right of the list) reloads from page 1.
+- Player entries show *(Host)* and *(You)* tags.
 
 ---
 
@@ -517,9 +542,10 @@ Build logs are in `%USERPROFILE%\AppData\LocalLow\<Company>\<Product>\Player.log
 ## 6. Known gaps and housekeeping
 
 - **No return-to-lobby after a match**: the state stays `InGame` until the session ends.
-- **InputManager joining in networked games**: `PlayerInputManager`'s join action can still
-  add extra *local* (non-networked) players during a networked game; turn joining off or
-  gate it on `GameState` if your game uses local co-op and networking together.
+- **Stray IDE folder**: Rider created `Assets/Network/.idea`; delete it (it isn't project content).
+- **Netcode prefab list**: only the Player Prefab is registered. Before adding more
+  networked prefabs, add them to `Assets/DefaultNetworkPrefabs.asset` and put that list in
+  *Network Prefabs Lists* on Netcode's NetworkManager.
 - **Password-protected sessions can't be joined** from the menu (no prompt).
 - **No way back to the menu** from gameplay yet: loading the `Menu` scene shows it again,
   but nothing in gameplay does that yet (needs a pause menu).
@@ -568,5 +594,97 @@ Not implemented yet; listed roughly in order of usefulness for game jams.
 ### Project health
 - **Assembly definitions** (one `.asmdef` per subsystem folder) so the dependency rules
   in section 1 are enforced by the compiler and recompiles are faster.
-- **EditMode tests** for `SaveManager` (slot names, round-trips) and the settings
-  conversions (volume, MSAA, display mode, resolution parsing).
+- **More EditMode tests**: `SaveManager` (slot names, round-trips) and the settings
+  conversions (volume, MSAA, display mode, resolution parsing). See section 8.
+- **Automated multiplayer scenarios** (section 8, "Next level").
+
+---
+
+## 8. Debugging and automated checks
+
+### Runtime logs (`Core/Diagnostics/LogCapture.cs`)
+Every play session — Editor or build — writes its whole Unity log to its own file:
+- **Editor**: `<project>/Logs/Runtime/<yyyyMMdd-HHmmss>_editor-<label>_<pid>.log`, where
+  `<label>` is `main`, or the virtual player's name (`Player2`…) in Multiplayer Play Mode —
+  virtual players write into the main project's folder too, so all instances sit side by side.
+- **Builds**: `<persistentDataPath>/Logs/…_player-<label>_<pid>.log` (label = `-authProfile`), or any folder given with
+  the command-line argument `-logCaptureDir "<folder>"` (point two test builds at
+  `<project>/Logs/Runtime` and both logs land next to the Editor's).
+- Errors and exceptions include their stack traces; each line has a time and frame number.
+  The last line counts errors / exceptions / warnings for the session. `LATEST.txt` names
+  the newest file; the newest 20 are kept. `Logs/` is ignored by version control.
+- **Tools › WavelineBase › Open Latest Runtime Log** opens it. Because these files live in
+  the project folder, Claude (or any tool with folder access) can read them directly — no
+  copy-pasting from the Console.
+
+### Automated checks (EditMode tests in `Assets/Tests/Editor`)
+| File | What it checks |
+|---|---|
+| `SpawnClearanceTests` | Clearance read from CharacterController / Capsule / Box / Sphere colliders (skin, scale, child offsets, triggers), padding, bottom offset, overlap detection |
+| `SpawnManagerTests` | Ground snap (on, off, no ground), Random-unique and Random never sharing a point, Fixed slots, blocked points skipped, fallback search, facing |
+| `ProjectSetupTests` | Build settings start with Bootstrap; no empty Bootstrapper slots; the Network prefab has Netcode + transport + scene management + SpawnManager; the gameplay scene is in the build; the player prefab has NetworkObject, Owner NetworkTransform, NetworkPlayerOwnership and a usable collider; the gameplay scene has ≥ *Max Players* spawn points, all grounded, clear and spaced apart; `MainMenu.uxml` has every element `MenuManager` looks up; password rules |
+
+How to run them:
+- **In the Editor (no restart)**: **Tools › WavelineBase › Run Checks**. Results go to
+  `Logs/TestResults/summary.txt` (short) and `results.xml` (full), and the summary is
+  logged to the Console. **Tools › WavelineBase › Open Check Results** opens it.
+- **With the Editor closed**: double-click `Tools/run-checks.bat` (in the project folder,
+  outside `Assets`). It compiles everything in batch mode, runs the same tests, and writes
+  `summary.txt` (including any compile errors), `editmode-results.xml` and
+  `editmode-editor.log`. Exit code 0 = all passed. Set `UNITY_EXE` if Unity isn't in the
+  Hub's default folder.
+- **Unity's Test Runner window** (Window › General › Test Runner › EditMode) shows the same
+  tests with per-test results.
+
+These are plain editor tests living in `Assembly-CSharp-Editor`, so they need no assembly
+definitions. Add new ones as `[Test]` methods in any `Editor` folder; they're picked up
+automatically.
+
+### Suggested workflow
+1. After any change: **Run Checks**. Fix anything in `summary.txt` before testing by hand.
+2. Manual cases from the session test table (section 4) only for what tests can't cover
+   (real online sessions, two instances).
+3. When something goes wrong in Play mode, the session's file in `Logs/Runtime` has the
+   full sequence (`[NetworkManager]`, `[SpawnManager]`, `[MenuManager]` lines with frames).
+
+### Testing with several players (Multiplayer Play Mode)
+`com.unity.multiplayer.playmode` is installed. It runs up to three extra **virtual players**
+(separate Editor processes reading this project) alongside the main Editor — no build needed.
+
+Setup (once):
+1. **Window › Multiplayer › Multiplayer Play Mode** (the exact menu can move between Unity
+   versions; search "Multiplayer Play Mode" in the menu bar if it isn't there).
+2. Tick **Player 2** (and 3/4 if needed). The first activation copies the project into
+   `Library/VP` and can take a few minutes; later ones are quick.
+
+Each run:
+1. Press Play in the main Editor; every active virtual player enters Play mode with it
+   (starting from Bootstrap, like the main Editor).
+2. Host in one window (*Play › New Lobby*), join from another (*Play › Lobbies*).
+3. Stop Play in the main Editor to stop them all. Code changes reach the virtual players
+   when they recompile after the main Editor does.
+
+Identity: every instance must sign in as a **different** anonymous player, or the session
+service treats them as one person. The Authentication package does this for virtual players
+by itself (it uses each one's `-name`, e.g. `Player2`, as the profile), and the sign-in log
+line shows `profile: …` so you can confirm it. Builds use the command-line argument
+`-authProfile <name>` instead (`Core/Diagnostics/InstanceIdentity.cs`).
+
+Things to know:
+- Virtual players share `persistentDataPath`, so they share saved settings with the main
+  Editor. Changing settings in two instances at once can overwrite each other's file.
+- Virtual players have no Scene/Inspector windows by default; use the main Editor as the
+  host when you want to inspect objects.
+- If a virtual player misbehaves (won't start, stale code), deactivate it, delete
+  `Library/VP`, and activate it again — the package rebuilds it.
+- After a run, tell Claude which case you tried; the logs for every instance are in
+  `Logs/Runtime` (`…_editor-main_…`, `…_editor-Player2_…`).
+
+### Next level (not built yet)
+- **Scripted multiplayer scenarios**: a test-only component that, when a build is started
+  with e.g. `-autotest host` / `-autotest client <code>`, signs in, creates or joins a
+  session, starts the game, checks spawns/ownership and quits with a PASS/FAIL exit code.
+  A script launches a host build and a client build with `-logCaptureDir` pointing at the
+  project, so a whole two-player run is checked without anyone clicking.
+- **A Unity editor plugin (MCP server)** connected to the Claude app, so Claude can read the
+  Console, trigger a recompile and run tests directly after each edit.

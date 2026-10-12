@@ -29,7 +29,7 @@ namespace Network.Spawning
     /// (see SpawnClearance), and SpawnPoint gizmos draw that same shape.
     /// PUBLIC API (server only): SpawnPlayer, SpawnPlayers, RespawnPlayer, TryGetSpawnPose,
     ///                           ForgetClient, ResetState; Mode / SpawnGroup can be changed at runtime.
-    ///            (any time):    GetClearance, ResolvePlayerPrefab
+    ///            (any time):    GetClearance, ResolvePlayerPrefab, ShouldSnap, TryResolveSpawnPosition
     /// </summary>
     public class SpawnManager : MonoBehaviour
     {
@@ -54,6 +54,18 @@ namespace Network.Spawning
         [SerializeField] private float clearancePadding;
         [Tooltip("Raises the test volume so resting on the floor doesn't count as blocked.")]
         [SerializeField] private float floorSkin = 0.05f;
+
+        [Header("Ground snap")]
+        [Tooltip("Treat each SpawnPoint as a spot on the floor: probe down from it and place the player so its " +
+                 "clearance shape rests on the ground. Points never need moving when the player's size changes. " +
+                 "Each SpawnPoint can override this.")]
+        [SerializeField] private bool snapToGround = true;
+        [Tooltip("Layers that count as ground (triggers and CharacterControllers are ignored).")]
+        [SerializeField] private LayerMask groundLayers = ~0;
+        [Tooltip("The downward probe starts this far above the point, so points slightly below the surface still work.")]
+        [SerializeField] private float groundProbeStartHeight = 0.25f;
+        [Tooltip("How far below the point to look for ground.")]
+        [SerializeField] private float groundProbeDistance = 10f;
 
         [Header("Manual clearance (auto off, or no supported collider on the prefab)")]
         [Tooltip("Capsule radius checked around a point.")]
@@ -80,6 +92,8 @@ namespace Network.Spawning
         private NetcodeManager _netcode;
         private SpawnClearance? _cachedClearance; // play mode only; edit mode recomputes so prefab edits show at once
         private GameObject _cachedClearancePrefab;
+        private readonly HashSet<SpawnPoint> _warnedNoGround = new();
+        private static readonly RaycastHit[] GroundHits = new RaycastHit[16];
 
         /// <summary>The SpawnManager in use while playing (for SpawnPoint gizmos and tools).</summary>
         public static SpawnManager Active { get; private set; }
@@ -182,6 +196,74 @@ namespace Network.Spawning
             _reservations.Clear();
             _random = null;
             _cachedClearance = null;
+            _warnedNoGround.Clear();
+        }
+
+        // ---------------- Ground snap ----------------
+
+        /// <summary>Whether this point snaps to the ground (its own override, else "Snap To Ground").</summary>
+        public bool ShouldSnap(SpawnPoint point)
+        {
+            if (point == null) return snapToGround;
+            return point.GroundSnap switch
+            {
+                SpawnPoint.GroundSnapMode.Snap => true,
+                SpawnPoint.GroundSnapMode.DontSnap => false,
+                _ => snapToGround
+            };
+        }
+
+        /// <summary>Where the player's pivot goes for a point: the point itself, or (when snapping) the spot
+        /// above the ground below it where the clearance shape rests on the floor. Returns false, leaving
+        /// the point's own position, if snapping is on but no ground was found.</summary>
+        public bool TryResolveSpawnPosition(SpawnPoint point, out Vector3 position) =>
+            TryResolveSpawnPosition(point.transform.position, point.transform.rotation, ShouldSnap(point), out position);
+
+        /// <inheritdoc cref="TryResolveSpawnPosition(SpawnPoint, out Vector3)"/>
+        public bool TryResolveSpawnPosition(Vector3 origin, Quaternion rotation, bool snap, out Vector3 position)
+        {
+            position = origin;
+            if (!snap) return true;
+            if (!TryFindGround(origin, out var groundY)) return false;
+
+            // Lift the pivot so the shape's lowest point sits Floor Skin above the ground.
+            var bottom = GetClearance().BottomOffset(rotation);
+            position = new Vector3(origin.x, groundY - bottom + floorSkin, origin.z);
+            return true;
+        }
+
+        private bool TryFindGround(Vector3 origin, out float groundY)
+        {
+            groundY = origin.y;
+            var start = origin + Vector3.up * groundProbeStartHeight;
+            var count = Physics.RaycastNonAlloc(start, Vector3.down, GroundHits, groundProbeStartHeight + groundProbeDistance,
+                                                groundLayers, QueryTriggerInteraction.Ignore);
+
+            // Nearest hit that isn't a character (a player standing on the point isn't the floor) -
+            // including other colliders on an object that has a CharacterController.
+            var found = false;
+            var nearest = float.MaxValue;
+            for (var i = 0; i < count; i++)
+            {
+                var hit = GroundHits[i];
+                if (hit.distance >= nearest || IsCharacter(hit.collider)) continue;
+                nearest = hit.distance;
+                groundY = hit.point.y;
+                found = true;
+            }
+            return found;
+        }
+
+        private static bool IsCharacter(Collider collider) =>
+            collider is CharacterController || collider.GetComponentInParent<CharacterController>() != null;
+
+        private Vector3 ResolveOrWarn(SpawnPoint point)
+        {
+            if (TryResolveSpawnPosition(point, out var position)) return position;
+            if (_warnedNoGround.Add(point))
+                Debug.LogWarning($"[SpawnManager] No ground within {groundProbeDistance} below SpawnPoint '{point.name}'; " +
+                                 "using the point's own position. Check Ground Layers or move the point.", point);
+            return position;
         }
 
         // ---------------- Clearance shape ----------------
@@ -284,20 +366,22 @@ namespace Network.Spawning
 
             var ordered = OrderForMode(clientId, points);
 
-            // 1. The first free point in mode order.
+            // 1. The first free point in mode order (snapped to the ground where enabled).
             var clearance = GetClearance();
             foreach (var point in ordered)
             {
-                if (!IsClear(point.transform.position, point.transform.rotation, clearance)) continue;
-                Choose(point, point.transform.position);
-                pose = point.Pose;
+                var position = ResolveOrWarn(point);
+                if (!IsClear(position, point.transform.rotation, clearance)) continue;
+                Choose(point, position);
+                pose = new Pose(position, point.transform.rotation);
                 return true;
             }
 
             // 2. Every point is blocked/reserved: look for a free spot around them.
             foreach (var point in ordered)
             {
-                if (!TryFindClearNear(point.transform.position, point.transform.rotation, clearance, out var position)) continue;
+                if (!TryFindClearNear(point.transform.position, point.transform.rotation, clearance, ShouldSnap(point),
+                                      out var position)) continue;
                 Choose(point, position);
                 pose = new Pose(position, point.transform.rotation);
                 Debug.LogWarning($"[SpawnManager] All spawn points blocked; using a free spot near '{point.name}'.", this);
@@ -306,8 +390,9 @@ namespace Network.Spawning
 
             // 3. Nothing free at all: overlap rather than not spawning.
             var fallback = ordered[0];
-            Choose(fallback, fallback.transform.position);
-            pose = fallback.Pose;
+            var fallbackPosition = ResolveOrWarn(fallback);
+            Choose(fallback, fallbackPosition);
+            pose = new Pose(fallbackPosition, fallback.transform.rotation);
             Debug.LogWarning($"[SpawnManager] No free spawn position found; spawning at blocked point '{fallback.name}'. " +
                              "Add more SpawnPoints or check Blocking Layers.", this);
             return false;
@@ -392,7 +477,7 @@ namespace Network.Spawning
             return !preventOverlap || !clearance.Overlaps(position, rotation, blockingLayers, floorSkin);
         }
 
-        private bool TryFindClearNear(Vector3 origin, Quaternion rotation, SpawnClearance clearance, out Vector3 position)
+        private bool TryFindClearNear(Vector3 origin, Quaternion rotation, SpawnClearance clearance, bool snap, out Vector3 position)
         {
             const int directions = 8;
             var step = clearance.FootprintRadius * 2.2f;
@@ -402,6 +487,8 @@ namespace Network.Spawning
                 {
                     var angle = (Mathf.PI * 2f / directions) * i;
                     var candidate = origin + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * (step * ring);
+                    // Each candidate is snapped separately, so the search follows slopes and steps.
+                    if (!TryResolveSpawnPosition(candidate, rotation, snap, out candidate)) continue;
                     if (!IsClear(candidate, rotation, clearance)) continue;
                     position = candidate;
                     return true;
@@ -420,6 +507,8 @@ namespace Network.Spawning
             clearanceHeight = Mathf.Max(clearanceRadius * 2f, clearanceHeight);
             reservationSeconds = Mathf.Max(0f, reservationSeconds);
             fallbackRings = Mathf.Max(0, fallbackRings);
+            groundProbeStartHeight = Mathf.Max(0f, groundProbeStartHeight);
+            groundProbeDistance = Mathf.Max(0.01f, groundProbeDistance);
         }
 #endif
     }

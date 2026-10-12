@@ -53,7 +53,7 @@
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="PlayPanel" class="menu-panel" style="visibility: visible;">
+    <ui:VisualElement name="PlayPanel" class="menu-panel" style="visibility: hidden;">
         <ui:Label text="Waveline Base Project" name="TitleText" class="menu-title"/>
         <ui:VisualElement name="Buttons" class="menu-button-panel">
             <ui:Button text="Solo" name="SoloButton" class="menu-button"/>
@@ -64,8 +64,9 @@
             <ui:Label text="Server List" class="menu-title subpanel-title"/>
             <ui:ScrollView vertical-scroller-visibility="Hidden" name="SessionList" style="top: 15%; bottom: 15%; left: 0%; right: 0%; height: 70%;"/>
             <ui:Button text="New Lobby" name="NewLobbyButton" class="create-lobby-button"/>
+            <ui:Button text="Refresh" name="RefreshSessionsButton" class="create-lobby-button refresh-button"/>
         </ui:VisualElement>
-        <ui:VisualElement name="NewLobbySubpanel" class="menu-subpanel" style="visibility: visible;">
+        <ui:VisualElement name="NewLobbySubpanel" class="menu-subpanel" style="visibility: hidden;">
             <ui:Label text="New Lobby" class="menu-title subpanel-title"/>
             <ui:ScrollView vertical-scroller-visibility="Hidden" name="LobbySettings" style="top: 15%; bottom: 0%; left: 0%; right: 0%; height: 85%; position: relative;">
                 <ui:Label text="Lobby Name" style="-unity-text-align: upper-center; -unity-font-style: bold; color: rgb(255, 255, 255); font-size: 24px;"/>
@@ -76,14 +77,17 @@
             </ui:ScrollView>
         </ui:VisualElement>
     </ui:VisualElement>
-    <ui:VisualElement name="LobbyPanel" class="menu-panel" style="visibility: hidden;">
+    <ui:VisualElement name="LobbyPanel" class="menu-panel" style="visibility: visible;">
         <ui:Label text="Lobby" name="LobbyNameText" class="menu-title"/>
         <ui:VisualElement name="Buttons" class="menu-button-panel" style="top: 35%; bottom: 5%; left: 5%; right: 75%;">
-            <ui:Toggle label="Lock on start" value="true" name="LockOnStartToggle" class="lobby-toggle"/>
-            <ui:Button text="Start" name="StartGameButton" class="menu-button"/>
             <ui:Button text="Back" name="BackButton" class="menu-button"/>
         </ui:VisualElement>
-        <ui:VisualElement name="Players" class="menu-button-panel" style="top: 35%; bottom: 5%; left: 75%; right: 5%;"/>
-        <ui:VisualElement name="LobbyInformation" style="flex-grow: 1; top: 30%; left: 30%; right: 30%; bottom: 5%; position: absolute;"/>
+        <ui:Label text="Players:" name="PlayersLabel" class="lobby-player-entry" style="border-bottom-color: rgb(255, 255, 255); border-top-width: 4px; border-right-width: 4px; border-bottom-width: 4px; border-left-width: 4px; top: 40%; bottom: 50%; left: 75%; right: 5%; position: absolute;"/>
+        <ui:VisualElement name="Players" class="menu-button-panel" style="top: 50%; bottom: 5%; left: 75%; right: 5%; justify-content: space-between;"/>
+        <ui:VisualElement name="LobbyInformation" style="flex-grow: 1; top: 30%; left: 30%; right: 30%; bottom: 5%; position: absolute; align-items: center;">
+            <ui:Toggle label="Lock on start" value="true" name="LockOnStartToggle" class="lobby-toggle"/>
+            <ui:Button text="Start Game" name="StartGameButton" class="create-lobby-button" style="position: absolute; width: 50%; padding-top: 1%; margin-top: 5%; margin-right: 0%; margin-bottom: 5%; margin-left: 0%;"/>
+        </ui:VisualElement>
     </ui:VisualElement>
+    <ui:Label text="" name="StatusText" picking-mode="Ignore" class="status-text" style="display: none;"/>
 </ui:UXML>

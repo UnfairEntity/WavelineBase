@@ -4,6 +4,8 @@ using Core;
 using Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using NetcodeManager = Unity.Netcode.NetworkManager;
 
 namespace Player.Input
 {
@@ -25,6 +27,11 @@ namespace Player.Input
         [Header("Startup")]
         [Tooltip("Joins one player automatically at Start. Off by default: InputManager starts in the Bootstrap scene, so an auto-joined player would be destroyed as soon as the first real scene loads. Place a Player in your gameplay scene (as DefaultScene does) or call JoinPlayer() after loading it instead.")]
         [SerializeField] private bool autoJoinFirstPlayer;
+
+        [Tooltip("Turn off PlayerInputManager's join-by-button while a networked (Netcode) game is running, so " +
+                 "pressing Join can't add extra local, non-networked players. Re-enabled when the network stops.")]
+        [SerializeField] private bool blockLocalJoinInNetworkedGames = true;
+        private bool _joiningDisabledForNetwork;
 
         [Header("Rebind")]
         [Tooltip("Control paths excluded from rebind candidates so incidental mouse/stick noise can't get captured.")]
@@ -52,6 +59,27 @@ namespace Player.Input
             _playerInputManager = GetComponent<PlayerInputManager>();
             _playerInputManager.onPlayerJoined += HandlePlayerJoined;
             _playerInputManager.onPlayerLeft += HandlePlayerLeft;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        // Checked on every scene load: a networked game always loads its level through Netcode,
+        // and leaving one always returns to the menu scene.
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!blockLocalJoinInNetworkedGames || _playerInputManager == null) return;
+
+            var netcode = NetcodeManager.Singleton;
+            var networked = netcode != null && netcode.IsListening;
+            if (networked && _playerInputManager.joiningEnabled)
+            {
+                _playerInputManager.DisableJoining();
+                _joiningDisabledForNetwork = true;
+            }
+            else if (!networked && _joiningDisabledForNetwork)
+            {
+                _playerInputManager.EnableJoining();
+                _joiningDisabledForNetwork = false;
+            }
         }
 
         private void Start()
@@ -67,6 +95,7 @@ namespace Player.Input
             {
                 _playerInputManager.onPlayerJoined -= HandlePlayerJoined;
                 _playerInputManager.onPlayerLeft -= HandlePlayerLeft;
+            SceneManager.sceneLoaded -= OnSceneLoaded;
             }
             _activeRebindOperation?.Dispose();
         }

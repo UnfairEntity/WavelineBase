@@ -20,7 +20,7 @@ namespace Menu
     /// Menu is the UI wiring layer: it may call other managers directly (Audio, Game,
     /// Network, Save); no other subsystem may depend on Menu. See Architecture-Guide.md.
     /// The menu shows itself whenever the menu scene loads and hides for any other scene.
-    /// PUBLIC API: ShowMainMenu, HideMenu
+    /// PUBLIC API: ShowMainMenu, HideMenu, ShowStatus
     /// </summary>
     public class MenuManager : Singleton<MenuManager>
     {
@@ -58,11 +58,16 @@ namespace Menu
         private Button _lobbiesButton;
         private ScrollView _sessionList;
         private Button _newLobbyButton;
+        private Button _refreshSessionsButton;
 
         // Play Menu - New Lobby
         private TextField _lobbyName;
         private TextField _lobbyPassword;
         private Button _createLobbyButton;
+
+        // Status line (bottom of the screen, any panel)
+        private Label _statusText;
+        private IVisualElementScheduledItem _statusHide;
 
         // Lobby
         private Label _lobbyNameText;
@@ -137,6 +142,8 @@ namespace Menu
             _lobbiesButton = _root.Q<Button>("LobbiesButton");
             _sessionList = _root.Q<ScrollView>("SessionList");
             _newLobbyButton = _root.Q<Button>("NewLobbyButton");
+            _refreshSessionsButton = _root.Q<Button>("RefreshSessionsButton");
+            _statusText = _root.Q<Label>("StatusText");
 
             _lobbyName = _root.Q<TextField>("LobbyName");
             _lobbyPassword = _root.Q<TextField>("LobbyPassword");
@@ -174,6 +181,7 @@ namespace Menu
             _soloButton.clicked += OnSoloButtonClicked;
             _lobbiesButton.clicked += OnLobbiesButtonClicked;
             _newLobbyButton.clicked += OnNewLobbyButtonClicked;
+            if (_refreshSessionsButton != null) _refreshSessionsButton.clicked += RefreshSessions;
 
             _createLobbyButton.clicked += OnCreateLobbyButtonClicked;
             if (_startGameButton != null) _startGameButton.clicked += OnStartGameButtonClicked;
@@ -262,6 +270,35 @@ namespace Menu
             _history.Clear();
             _root.style.display = DisplayStyle.None;
             SaveManager.Flush();
+        }
+
+        // ---------------- Status line ----------------
+
+        public enum StatusKind { Info, Error }
+
+        /// <summary>Shows a short message at the bottom of the menu (connecting, failed join, rejected,
+        /// ...). It hides itself after a few seconds; errors stay longer. Also logged to the Console.</summary>
+        public void ShowStatus(string message, StatusKind kind = StatusKind.Info)
+        {
+            if (kind == StatusKind.Error) Debug.LogWarning($"[MenuManager] {message}");
+            else Debug.Log($"[MenuManager] {message}");
+
+            if (_statusText == null) return;
+            _statusText.text = message;
+            _statusText.EnableInClassList("status-text--error", kind == StatusKind.Error);
+            _statusText.style.display = DisplayStyle.Flex;
+
+            _statusHide?.Pause();
+            var seconds = kind == StatusKind.Error ? 8f : 4f;
+            _statusHide = _statusText.schedule.Execute(() => _statusText.style.display = DisplayStyle.None)
+                                      .StartingIn((long)(seconds * 1000));
+        }
+
+        /// <summary>Exception message without our "[NetworkManager] " log prefix.</summary>
+        private static string Describe(Exception e)
+        {
+            var message = e is AggregateException { InnerException: not null } agg ? agg.InnerException.Message : e.Message;
+            return message.Replace("[NetworkManager] ", "");
         }
 
         // ---------------- Panel navigation ----------------
@@ -371,7 +408,7 @@ namespace Menu
             if (_network == null) return;
             if (!_network.IsReady)
             {
-                Debug.LogWarning("[MenuManager] Still connecting to Unity Services; try again in a moment.");
+                ShowStatus("Still connecting to online services - try again in a moment.");
                 return;
             }
 
@@ -406,11 +443,13 @@ namespace Menu
 
                 _sessionPageToken = results.ContinuationToken;
                 _sessionListHasMore = !string.IsNullOrEmpty(_sessionPageToken) && results.Sessions.Count > 0;
+                if (!_sessionListHasMore && _listedSessionIds.Count == 0) ShowStatus("No open lobbies right now.");
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
-                if (generation == _sessionListGeneration) _sessionListHasMore = false; // reopen Lobbies to retry
+                ShowStatus($"Couldn't load the lobby list: {Describe(e)}", StatusKind.Error);
+                if (generation == _sessionListGeneration) _sessionListHasMore = false; // Refresh to retry
             }
             finally
             {
@@ -456,11 +495,13 @@ namespace Menu
             try
             {
                 // NOTE: password-protected sessions will be rejected here until a password prompt exists.
+                ShowStatus("Joining...");
                 await _network.JoinSessionById(sessionId);
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
+                ShowStatus($"Couldn't join: {Describe(e)}", StatusKind.Error);
             }
         }
 
@@ -469,17 +510,19 @@ namespace Menu
             var password = _lobbyPassword.value;
             if (!NetworkManager.IsValidPassword(password, out var error))
             {
-                Debug.LogWarning($"[MenuManager] {error}");
+                ShowStatus(error, StatusKind.Error);
                 return;
             }
 
             try
             {
+                ShowStatus("Creating lobby...");
                 await _network.StartSessionAsHost(_lobbyName.value, password);
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
+                ShowStatus($"Couldn't create the lobby: {Describe(e)}", StatusKind.Error);
             }
         }
 
@@ -513,6 +556,10 @@ namespace Menu
         {
             UnsubscribeLobbySession();
 
+            // Tell the player why, unless they chose to leave.
+            if (_network != null && !_network.LastLeaveWasRequested && !string.IsNullOrEmpty(_network.LastLeaveReason))
+                ShowStatus($"Left the lobby: {_network.LastLeaveReason}", StatusKind.Error);
+
             // Left while in a level (host quit, disconnected, ...): go back to the menu scene,
             // which shows the main menu when it loads.
             if (SceneManager.GetActiveScene().name != menuSceneName)
@@ -535,11 +582,12 @@ namespace Menu
             try
             {
                 var started = await _network.StartGame(_lockOnStartToggle?.value);
-                if (!started) Debug.LogWarning("[MenuManager] The game didn't start; see the messages above.");
+                if (!started) ShowStatus("The game didn't start - see the Console for details.", StatusKind.Error);
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
+                ShowStatus($"The game didn't start: {Describe(e)}", StatusKind.Error);
             }
             finally
             {
@@ -597,6 +645,7 @@ namespace Menu
             {
                 var playerName = player.GetPlayerName();
                 if (string.IsNullOrEmpty(playerName)) playerName = "Player";
+                if (player.Id == session.Host) playerName += " (Host)";
                 if (player.Id == selfId) playerName += " (You)";
 
                 var entry = new Label(playerName);

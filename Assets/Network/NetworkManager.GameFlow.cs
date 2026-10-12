@@ -336,7 +336,8 @@ namespace Network
             if (!wasConnected && string.IsNullOrEmpty(reason)) return; // transient reconnects during setup
 
             LogLifecycle($"Disconnected from the host{(string.IsNullOrEmpty(reason) ? "" : $": {reason}")}.");
-            _ = LeaveSession(string.IsNullOrEmpty(reason) ? "disconnected from host" : $"disconnected from host ({reason})");
+            _ = LeaveSession(string.IsNullOrEmpty(reason) ? "disconnected from host" : $"disconnected from host ({reason})",
+                             requested: false);
         }
 
         private void HookSceneEvents()

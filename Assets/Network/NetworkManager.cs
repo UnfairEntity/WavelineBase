@@ -63,6 +63,14 @@ namespace Network
         /// <summary>True once Unity Services are initialized and the player is signed in.</summary>
         public bool IsReady { get; private set; }
 
+        /// <summary>Why the most recent session ended (e.g. "lobby Back button",
+        /// "disconnected from host (The game is starting.)"). Set before SessionLeft fires.</summary>
+        public string LastLeaveReason { get; private set; }
+
+        /// <summary>False when the last leave wasn't asked for by this player (kicked, host gone,
+        /// rejected by the host) - menus can show <see cref="LastLeaveReason"/> as a message.</summary>
+        public bool LastLeaveWasRequested { get; private set; } = true;
+
         public event Action Ready;
         public event Action<ISession> SessionJoined;
         public event Action SessionLeft;
@@ -99,10 +107,19 @@ namespace Network
         {
             try
             {
-                await UnityServices.InitializeAsync();
+                // Each copy of the game on one machine needs its own Authentication profile, or they
+                // all sign in as the same anonymous player and the session service treats them as one.
+                // Multiplayer Play Mode virtual players get one automatically (the package uses their
+                // -name); builds take -authProfile <name>. See Core.Diagnostics.InstanceIdentity.
+                var options = new InitializationOptions();
+                var profile = Core.Diagnostics.InstanceIdentity.AuthProfile;
+                if (profile != null) options.SetProfile(profile);
+
+                await UnityServices.InitializeAsync(options);
                 if (!AuthenticationService.Instance.IsSignedIn)
                     await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log($"Sign in anonymously succeeded! PlayerID: {AuthenticationService.Instance.PlayerId}");
+                Debug.Log($"Sign in anonymously succeeded! PlayerID: {AuthenticationService.Instance.PlayerId} " +
+                          $"(profile: {AuthenticationService.Instance.Profile})");
 
                 // WithPlayerName() requires the player name to have been fetched from the
                 // Authentication service first (one is generated if the player has none).
@@ -282,13 +299,16 @@ namespace Network
         // SESSION LEAVING //
 
         /// <param name="reason">Shown in the diagnostic log so traces say which code path left.</param>
-        public async Task LeaveSession(string reason = "unspecified")
+        /// <param name="requested">False when this player didn't choose to leave (connection lost, rejected).</param>
+        public async Task LeaveSession(string reason = "unspecified", bool requested = true)
         {
             var session = CurrentSession;
             if (session == null) return;
 
             var sessionId = session.Id;
             LogLifecycle($"Leaving session {sessionId} (reason: {reason})");
+            LastLeaveReason = reason;
+            LastLeaveWasRequested = requested;
 
             // Clear local state first so UI/game code reacts even if the service call fails.
             ClearSession();
@@ -463,6 +483,8 @@ namespace Network
         private void HandleSessionLost()
         {
             LogLifecycle("Removed from session (kicked, or the session was deleted).");
+            LastLeaveReason = "removed from the session (kicked, or the session was closed)";
+            LastLeaveWasRequested = false;
             ClearSession();
         }
     }

@@ -74,6 +74,28 @@ namespace Network.Spawning
             }
         }
 
+        /// <summary>Height of the shape's lowest point relative to the pivot (usually negative) when the
+        /// pivot is rotated by <paramref name="rotation"/>. Used to rest the shape on the ground.</summary>
+        public float BottomOffset(Quaternion rotation)
+        {
+            switch (Kind)
+            {
+                case ShapeKind.Sphere:
+                    return (rotation * PointA).y - Radius;
+                case ShapeKind.Box:
+                {
+                    // Lowest corner: center minus the vertical reach of each rotated half-axis.
+                    var boxRotation = rotation * BoxRotation;
+                    var reach = Mathf.Abs((boxRotation * Vector3.right).y) * HalfExtents.x
+                              + Mathf.Abs((boxRotation * Vector3.up).y) * HalfExtents.y
+                              + Mathf.Abs((boxRotation * Vector3.forward).y) * HalfExtents.z;
+                    return (rotation * PointA).y - reach;
+                }
+                default:
+                    return Mathf.Min((rotation * PointA).y, (rotation * PointB).y) - Radius;
+            }
+        }
+
         /// <summary>Same shape grown by <paramref name="padding"/> on every side.</summary>
         public SpawnClearance Padded(float padding)
         {
@@ -153,8 +175,11 @@ namespace Network.Spawning
             var collider = FindCollider(prefab);
             if (collider == null) return false;
 
-            // Collider space -> prefab-root space (handles child offsets, rotation and scale).
-            var toRoot = prefab.transform.worldToLocalMatrix * collider.transform.localToWorldMatrix;
+            // Collider space -> the root's pivot frame (position + rotation, but NOT the root's scale:
+            // a spawned instance keeps the prefab root's scale, so it must stay in the shape).
+            // Handles child offsets, rotations and every level of scale.
+            var rootFrame = Matrix4x4.TRS(prefab.transform.position, prefab.transform.rotation, Vector3.one).inverse;
+            var toRoot = rootFrame * collider.transform.localToWorldMatrix;
             var scale = Abs(toRoot.lossyScale);
             var source = $"{prefab.name}: {collider.GetType().Name}";
 
